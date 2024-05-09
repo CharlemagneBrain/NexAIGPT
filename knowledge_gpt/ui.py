@@ -6,6 +6,8 @@ import openai
 from streamlit.logger import get_logger
 from typing import NoReturn
 
+#from knowledge_gpt.knowledge_gpt.core.model_schema import Message, Role
+
 logger = get_logger(__name__)
 
 
@@ -20,7 +22,7 @@ def wrap_doc_in_html(docs: List[Document]) -> str:
 
 def is_query_valid(query: str) -> bool:
     if not query:
-        st.error("Please enter a question!")
+        st.error("Posez votre question!")
         return False
     return True
 
@@ -47,13 +49,15 @@ def is_open_ai_key_valid(openai_api_key, model: str) -> bool:
     if model == "debug":
         return True
 
-    if not openai_api_key:
-        st.error("Please enter your OpenAI API key in the sidebar!")
-        return False
     try:
         openai.ChatCompletion.create(
             model=model,
-            messages=[{"role": "user", "content": "test"}],
+            messages=[
+                    {
+                        "role": "user", 
+                        "content": "test"
+                    }
+                ],
             api_key=openai_api_key,
         )
     except Exception as e:

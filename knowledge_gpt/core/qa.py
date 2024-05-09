@@ -38,28 +38,28 @@ def query_folder(
         prompt=STUFF_PROMPT,
     )
 
-    relevant_docs = folder_index.index.similarity_search(query, k=5)
+    relevant_docs = folder_index.index.similarity_search(query, k=7)
     result = chain(
         {"input_documents": relevant_docs, "question": query}, return_only_outputs=True
     )
     sources = relevant_docs
 
-    if not return_all:
-        sources = get_sources(result["output_text"], folder_index)
+    # if not return_all:
+    #     sources = get_sources(result["output_text"], folder_index)
 
     answer = result["output_text"].split("SOURCES: ")[0]
 
     return AnswerWithSources(answer=answer, sources=sources)
 
 
-def get_sources(answer: str, folder_index: FolderIndex) -> List[Document]:
-    """Retrieves the docs that were used to answer the question the generated answer."""
+# def get_sources(answer: str, folder_index: FolderIndex) -> List[Document]:
+#     """Retrieves the docs that were used to answer the question the generated answer."""
 
-    source_keys = [s for s in answer.split("SOURCES: ")[-1].split(", ")]
+#     source_keys = [s for s in answer.split("SOURCES: ")[-1].split(", ")]
 
-    source_docs = []
-    for file in folder_index.files:
-        for doc in file.docs:
-            if doc.metadata["source"] in source_keys:
-                source_docs.append(doc)
-    return source_docs
+#     source_docs = []
+#     for file in folder_index.files:
+#         for doc in file.docs:
+#             if doc.metadata["source"] in source_keys:
+#                 source_docs.append(doc)
+#     return source_docs

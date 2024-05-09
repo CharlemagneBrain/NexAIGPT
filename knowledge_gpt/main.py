@@ -1,8 +1,8 @@
 import streamlit as st
 
-from knowledge_gpt.components.sidebar import sidebar
+from components.sidebar import sidebar
 
-from knowledge_gpt.ui import (
+from ui import (
     wrap_doc_in_html,
     is_query_valid,
     is_file_valid,
@@ -10,24 +10,23 @@ from knowledge_gpt.ui import (
     display_file_read_error,
 )
 
-from knowledge_gpt.core.caching import bootstrap_caching
-
-from knowledge_gpt.core.parsing import read_file
-from knowledge_gpt.core.chunking import chunk_file
-from knowledge_gpt.core.embedding import embed_files
-from knowledge_gpt.core.qa import query_folder
-from knowledge_gpt.core.utils import get_llm
+from core.caching import bootstrap_caching
+from core.parsing import read_file
+from core.chunking import chunk_file
+from core.embedding import embed_files
+from core.qa import query_folder
+from core.utils import get_llm
 
 
 EMBEDDING = "openai"
 VECTOR_STORE = "faiss"
-MODEL_LIST = ["gpt-3.5-turbo", "gpt-4"]
+MODEL_LIST = ["gpt-4"]
 
 # Uncomment to enable debug mode
 # MODEL_LIST.insert(0, "debug")
 
-st.set_page_config(page_title="KnowledgeGPT", page_icon="📖", layout="wide")
-st.header("📖KnowledgeGPT")
+st.set_page_config(page_title="NexAIGPT", page_icon="📖", layout="wide")
+st.header("📖NexAIGPT")
 
 # Enable caching for expensive functions
 bootstrap_caching()
@@ -45,16 +44,16 @@ if not openai_api_key:
 
 
 uploaded_file = st.file_uploader(
-    "Upload a pdf, docx, or txt file",
+    "Chargez votre fichier pdf, docx, ou txt",
     type=["pdf", "docx", "txt"],
-    help="Scanned documents are not supported yet!",
+    help="Documents Scannés non pris en charge",
 )
 
-model: str = st.selectbox("Model", options=MODEL_LIST)  # type: ignore
-
-with st.expander("Advanced Options"):
-    return_all_chunks = st.checkbox("Show all chunks retrieved from vector search")
-    show_full_doc = st.checkbox("Show parsed contents of the document")
+#model: str = st.selectbox("Model", options=MODEL_LIST)  # type: ignore
+model = "gpt-4"
+# with st.expander("Advanced Options"):
+#     return_all_chunks = st.checkbox("Show all chunks retrieved from vector search")
+#     show_full_doc = st.checkbox("Show parsed contents of the document")
 
 
 if not uploaded_file:
@@ -75,7 +74,7 @@ if not is_open_ai_key_valid(openai_api_key, model):
     st.stop()
 
 
-with st.spinner("Indexing document... This may take a while⏳"):
+with st.spinner("Chargement du document... Cela peut prendre du temps⏳"):
     folder_index = embed_files(
         files=[chunked_file],
         embedding=EMBEDDING if model != "debug" else "debug",
@@ -84,38 +83,34 @@ with st.spinner("Indexing document... This may take a while⏳"):
     )
 
 with st.form(key="qa_form"):
-    query = st.text_area("Ask a question about the document")
-    submit = st.form_submit_button("Submit")
+    query = st.text_area("Posez vos questions")
+    submit = st.form_submit_button("Soumettre")
 
 
-if show_full_doc:
-    with st.expander("Document"):
-        # Hack to get around st.markdown rendering LaTeX
-        st.markdown(f"<p>{wrap_doc_in_html(file.docs)}</p>", unsafe_allow_html=True)
+# if show_full_doc:
+#     with st.expander("Document"):
+#         # Hack to get around st.markdown rendering LaTeX
+#         st.markdown(f"<p>{wrap_doc_in_html(file.docs)}</p>", unsafe_allow_html=True)
 
 
 if submit:
     if not is_query_valid(query):
         st.stop()
 
-    # Output Columns
-    answer_col, sources_col = st.columns(2)
-
     llm = get_llm(model=model, openai_api_key=openai_api_key, temperature=0)
     result = query_folder(
         folder_index=folder_index,
         query=query,
-        return_all=return_all_chunks,
         llm=llm,
     )
 
-    with answer_col:
-        st.markdown("#### Answer")
-        st.markdown(result.answer)
 
-    with sources_col:
-        st.markdown("#### Sources")
-        for source in result.sources:
-            st.markdown(source.page_content)
-            st.markdown(source.metadata["source"])
-            st.markdown("---")
+    st.markdown("#### Réponse")
+    st.markdown(result.answer)
+
+    # with sources_col:
+    #     st.markdown("#### Sources")
+    #     for source in result.sources:
+    #         st.markdown(source.page_content)
+    #         st.markdown(source.metadata["source"])
+    #         st.markdown("---")
